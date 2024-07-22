@@ -2,9 +2,8 @@ package guru.springframework.msscbeerservice.web.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.msscbeerservice.bootstrap.BeerLoader;
-import guru.springframework.msscbeerservice.domain.Beer;
-import guru.springframework.msscbeerservice.repositories.BeerRepository;
 import guru.springframework.msscbeerservice.services.BeerService;
+import guru.springframework.msscbeerservice.services.inventory.BeerInventoryService;
 import guru.springframework.msscbeerservice.web.model.BeerDto;
 import guru.springframework.msscbeerservice.web.model.BeerStyleEnum;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,10 +24,10 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 //import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -40,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(RestDocumentationExtension.class)
 @AutoConfigureRestDocs(uriScheme = "https", uriHost = "dev.springframework.guru", uriPort = 80)
-@WebMvcTest(BeerController.class)
+@WebMvcTest({BeerController.class})
 @ComponentScan(basePackages = "guru.springframework.msscbeerservice.web.mappers")
 class BeerControllerTest {
 
@@ -53,6 +52,8 @@ class BeerControllerTest {
     @MockBean
     BeerService beerService;
 
+    @MockBean
+    private BeerInventoryService beerInventoryService;
     BeerDto validBeer;
 
     @BeforeEach
@@ -62,16 +63,17 @@ class BeerControllerTest {
                 .beerName("Beer1")
                 .beerStyle(BeerStyleEnum.PALE_ALE)
                 .price(BigDecimal.valueOf(1234.56))
-                .upc(Long.valueOf(BeerLoader.BEER_1_UPC))
+                .upc(BeerLoader.BEER_1_UPC)
+                .quantityOnHand(50)
                 .build();
     }
 
     @Test
     void getBeerById() throws Exception {
-        given(beerService.getById(any())).willReturn(validBeer);
+        given(beerService.getById(any(),anyBoolean())).willReturn(validBeer);
 
         mockMvc.perform(get("/api/v1/beer/{beerId}", validBeer.getId())
-                        .param("iscold", "yes")
+                        .param("showInventoryOnHand", "yes")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(document("v1/beer-get",
@@ -79,7 +81,7 @@ class BeerControllerTest {
                                 parameterWithName("beerId").description("UUID of desired beer to get.")
                         ),
                         queryParameters(
-                                parameterWithName("iscold").description("Is Beer Cold Query param")
+                                parameterWithName("showInventoryOnHand").description("Show Inventory Info")
                         ),
                         responseFields(
                                 fieldWithPath("id").type(UUID.class.getSimpleName()).description("Id of Beer"),
@@ -88,7 +90,7 @@ class BeerControllerTest {
                                 fieldWithPath("lastModifiedDate").type(Timestamp.class.getSimpleName()).description("Date Updated"),
                                 fieldWithPath("beerName").type(String.class.getSimpleName()).description("Beer Name"),
                                 fieldWithPath("beerStyle").type(String.class.getSimpleName()).description("Beer Style"),
-                                fieldWithPath("upc").type(Long.class.getSimpleName()).description("UPC of Beer"),
+                                fieldWithPath("upc").type(String.class.getSimpleName()).description("UPC of Beer"),
                                 fieldWithPath("price").type(BigDecimal.class.getSimpleName()).description("Price"),
                                 fieldWithPath("myLocalDate").type(LocalDate.class.getSimpleName()).description("Local Date"),
                                 fieldWithPath("quantityOnHand").type(Integer.class.getSimpleName()).description("Quantity On Hand")

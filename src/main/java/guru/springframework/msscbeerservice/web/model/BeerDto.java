@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -20,7 +22,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BeerDto {
+public class BeerDto implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -8173722000613225700L;
 
 //    @JsonProperty("beerId")
     @Null
@@ -80,15 +85,14 @@ public class BeerDto {
     )
     private BeerStyleEnum beerStyle;
 
-    @Positive
     @NotNull
     @Schema(
             description = "UPC of Beer",
             name = "upc",
-            type = "Long",
+            type = "String",
             example = "1.0"
     )
-    private Long upc;
+    private String upc;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     @Positive
